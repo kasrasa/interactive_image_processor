@@ -67,7 +67,7 @@ def configure_page() -> None:
     """Set browser metadata and the initial Streamlit layout."""
 
     st.set_page_config(
-        page_title="OpenCV Parameter Explorer | Kasra Sadatsharifi",
+        page_title="Interactive Image Processor | Kasra Sadatsharifi",
         page_icon="◉",
         layout="wide",
         initial_sidebar_state="expanded",
@@ -83,7 +83,7 @@ def render_theme_selector() -> bool:
         ("Light", "Dark"),
         default="Light",
         key="appearance_theme",
-        help="Switch the entire explorer between light and dark mode.",
+        help="Switch the entire application between light and dark mode.",
         width="stretch",
     )
     dark_mode = selected_theme == "Dark"

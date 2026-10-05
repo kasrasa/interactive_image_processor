@@ -25,6 +25,21 @@ def _gray(image: np.ndarray) -> np.ndarray:
     return cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
 
+def _normalize_for_display(values: np.ndarray, log_scale: bool) -> np.ndarray:
+    """Map floating-point transform values to an 8-bit display image."""
+
+    display_values = np.abs(values).astype(np.float32)
+    if log_scale:
+        display_values = np.log1p(display_values)
+    return cv2.normalize(
+        display_values,
+        None,
+        0,
+        255,
+        cv2.NORM_MINMAX,
+    ).astype(np.uint8)
+
+
 def adjust_hsv(
     image: np.ndarray,
     hue_shift: int,
@@ -75,6 +90,177 @@ def bilateral_filter(
     sigma_space: float,
 ) -> np.ndarray:
     return cv2.bilateralFilter(image, diameter, sigma_color, sigma_space)
+
+
+def fourier_transform(
+    image: np.ndarray,
+    view: str,
+    center_frequency: bool,
+    log_scale: bool,
+) -> OperationResult:
+    """Return a displayable magnitude or phase view of the 2D Fourier transform."""
+
+    gray = _gray(image).astype(np.float32)
+    spectrum = cv2.dft(gray, flags=cv2.DFT_COMPLEX_OUTPUT)
+    if center_frequency:
+        spectrum = np.fft.fftshift(spectrum, axes=(0, 1))
+
+    if view == "Phase spectrum":
+        phase = cv2.phase(spectrum[:, :, 0], spectrum[:, :, 1])
+        output = np.clip(phase * (255.0 / (2.0 * np.pi)), 0, 255).astype(
+            np.uint8
+        )
+    else:
+        magnitude = cv2.magnitude(spectrum[:, :, 0], spectrum[:, :, 1])
+        output = _normalize_for_display(magnitude, log_scale)
+
+    zero_frequency = "Center" if center_frequency else "Top-left corner"
+    return OperationResult(output, {"Zero frequency": zero_frequency})
+
+
+def dct_transform(
+    image: np.ndarray,
+    view: str,
+    low_frequency_span: int,
+    log_scale: bool,
+) -> OperationResult:
+    """Visualize 2D DCT coefficients or reconstruct from a low-frequency block."""
+
+    gray = _gray(image).astype(np.float32)
+    height, width = gray.shape
+    bottom_padding = height % 2
+    right_padding = width % 2
+    border_mode = (
+        cv2.BORDER_REFLECT_101 if height > 1 and width > 1 else cv2.BORDER_REPLICATE
+    )
+    padded = cv2.copyMakeBorder(
+        gray,
+        0,
+        bottom_padding,
+        0,
+        right_padding,
+        border_mode,
+    )
+    coefficients = cv2.dct(padded)
+
+    fraction = low_frequency_span / 100.0
+    kept_height = max(1, int(np.ceil(coefficients.shape[0] * fraction)))
+    kept_width = max(1, int(np.ceil(coefficients.shape[1] * fraction)))
+    retained = np.zeros_like(coefficients)
+    retained[:kept_height, :kept_width] = coefficients[
+        :kept_height,
+        :kept_width,
+    ]
+    kept_ratio = 100.0 * kept_height * kept_width / retained.size
+
+    if view == "Low-frequency reconstruction":
+        reconstruction = cv2.idct(retained)[:height, :width]
+        output = np.clip(np.rint(reconstruction), 0, 255).astype(np.uint8)
+    else:
+        output = _normalize_for_display(retained, log_scale)
+
+    return OperationResult(output, {"Coefficient block": f"{kept_ratio:.1f}%"})
+
+
+def haar_wavelet_transform(
+    image: np.ndarray,
+    levels: int,
+    detail_gain: float,
+    log_scale: bool,
+) -> OperationResult:
+    """Build a multi-level 2D Haar coefficient mosaic without extra dependencies."""
+
+    gray = _gray(image).astype(np.float32)
+    height, width = gray.shape
+    factor = 2**levels
+    bottom_padding = (-height) % factor
+    right_padding = (-width) % factor
+    border_mode = (
+        cv2.BORDER_REFLECT_101 if height > 1 and width > 1 else cv2.BORDER_REPLICATE
+    )
+    coefficients = cv2.copyMakeBorder(
+        gray,
+        0,
+        bottom_padding,
+        0,
+        right_padding,
+        border_mode,
+    )
+
+    current_height, current_width = coefficients.shape
+    root_two = np.sqrt(2.0)
+    for _ in range(levels):
+        region = coefficients[:current_height, :current_width].copy()
+        low_columns = (region[:, 0::2] + region[:, 1::2]) / root_two
+        high_columns = (region[:, 0::2] - region[:, 1::2]) / root_two
+
+        low_low = (low_columns[0::2] + low_columns[1::2]) / root_two
+        high_low = (low_columns[0::2] - low_columns[1::2]) / root_two
+        low_high = (high_columns[0::2] + high_columns[1::2]) / root_two
+        high_high = (high_columns[0::2] - high_columns[1::2]) / root_two
+
+        half_height = current_height // 2
+        half_width = current_width // 2
+        coefficients[:half_height, :half_width] = low_low
+        coefficients[:half_height, half_width:current_width] = low_high
+        coefficients[half_height:current_height, :half_width] = high_low
+        coefficients[
+            half_height:current_height,
+            half_width:current_width,
+        ] = high_high
+        current_height, current_width = half_height, half_width
+
+    display_values = np.abs(coefficients)
+    detail_mask = np.ones_like(display_values, dtype=bool)
+    detail_mask[:current_height, :current_width] = False
+    display_values[detail_mask] *= detail_gain
+    output = _normalize_for_display(display_values, log_scale)
+    return OperationResult(output, {"Decomposition levels": str(levels)})
+
+
+def radon_transform(
+    image: np.ndarray,
+    angle_step: int,
+    resolution: int,
+    log_scale: bool,
+) -> OperationResult:
+    """Compute a displayable parallel-beam Radon sinogram."""
+
+    gray = _gray(image).astype(np.float32)
+    height, width = gray.shape
+    scale = resolution / max(height, width)
+    resized_width = max(1, min(resolution, round(width * scale)))
+    resized_height = max(1, min(resolution, round(height * scale)))
+    interpolation = cv2.INTER_AREA if scale < 1.0 else cv2.INTER_LINEAR
+    resized = cv2.resize(
+        gray,
+        (resized_width, resized_height),
+        interpolation=interpolation,
+    )
+
+    square = np.zeros((resolution, resolution), dtype=np.float32)
+    x0 = (resolution - resized_width) // 2
+    y0 = (resolution - resized_height) // 2
+    square[y0 : y0 + resized_height, x0 : x0 + resized_width] = resized
+
+    angles = np.arange(0, 180, angle_step, dtype=np.float32)
+    center = ((resolution - 1) / 2.0, (resolution - 1) / 2.0)
+    projections = []
+    for angle in angles:
+        matrix = cv2.getRotationMatrix2D(center, float(angle), 1.0)
+        rotated = cv2.warpAffine(
+            square,
+            matrix,
+            (resolution, resolution),
+            flags=cv2.INTER_LINEAR,
+            borderMode=cv2.BORDER_CONSTANT,
+            borderValue=0,
+        )
+        projections.append(rotated.sum(axis=0))
+
+    sinogram = np.stack(projections, axis=1)
+    output = _normalize_for_display(sinogram, log_scale)
+    return OperationResult(output, {"Projection angles": str(len(angles))})
 
 
 def sobel_edges(image: np.ndarray, kernel_size: int, direction: str) -> np.ndarray:
@@ -311,6 +497,14 @@ def apply_operation(
         output = gaussian_blur(image, **parameters)
     elif key == "bilateral_filter":
         output = bilateral_filter(image, **parameters)
+    elif key == "fourier_transform":
+        return fourier_transform(image, **parameters)
+    elif key == "dct_transform":
+        return dct_transform(image, **parameters)
+    elif key == "haar_wavelet_transform":
+        return haar_wavelet_transform(image, **parameters)
+    elif key == "radon_transform":
+        return radon_transform(image, **parameters)
     elif key == "sobel_edges":
         output = sobel_edges(image, **parameters)
     elif key == "canny_edges":

@@ -4,11 +4,20 @@ from __future__ import annotations
 
 import unittest
 
+import cv2
 import numpy as np
 
 from src.image_utils import convert_to_grayscale_rgb, create_sample_image
 from src.operation_registry import OPERATION_LIST, code_snippet, default_parameters
-from src.operations import add_gaussian_noise, adjust_hsv, apply_operation
+from src.operations import (
+    add_gaussian_noise,
+    adjust_hsv,
+    apply_operation,
+    dct_transform,
+    fourier_transform,
+    haar_wavelet_transform,
+    radon_transform,
+)
 
 
 class OperationSmokeTests(unittest.TestCase):
@@ -41,6 +50,53 @@ class OperationSmokeTests(unittest.TestCase):
         first = add_gaussian_noise(self.image, sigma=20, noise_mode="Color")
         second = add_gaussian_noise(self.image, sigma=20, noise_mode="Color")
         np.testing.assert_array_equal(first, second)
+
+    def test_fourier_centers_the_dc_component(self) -> None:
+        constant = np.full((32, 48, 3), 120, dtype=np.uint8)
+
+        result = fourier_transform(
+            constant,
+            view="Magnitude spectrum",
+            center_frequency=True,
+            log_scale=True,
+        ).image
+
+        self.assertEqual(np.unravel_index(np.argmax(result), result.shape), (16, 24))
+
+    def test_full_dct_reconstruction_recovers_grayscale_input(self) -> None:
+        expected = cv2.cvtColor(self.image, cv2.COLOR_RGB2GRAY)
+
+        result = dct_transform(
+            self.image,
+            view="Low-frequency reconstruction",
+            low_frequency_span=100,
+            log_scale=True,
+        ).image
+
+        np.testing.assert_allclose(result, expected, atol=1)
+
+    def test_wavelet_output_is_padded_for_the_selected_levels(self) -> None:
+        odd_image = self.image[:219, :319]
+
+        result = haar_wavelet_transform(
+            odd_image,
+            levels=3,
+            detail_gain=3.0,
+            log_scale=True,
+        ).image
+
+        self.assertEqual(result.shape, (224, 320))
+
+    def test_radon_output_has_one_column_per_projection_angle(self) -> None:
+        result = radon_transform(
+            self.image,
+            angle_step=11,
+            resolution=128,
+            log_scale=True,
+        )
+
+        self.assertEqual(result.image.shape, (128, 17))
+        self.assertEqual(result.metrics["Projection angles"], "17")
 
     def test_copyable_code_matches_each_default_preview(self) -> None:
         for operation in OPERATION_LIST:
@@ -76,6 +132,30 @@ class OperationSmokeTests(unittest.TestCase):
     def test_copyable_code_matches_alternate_branches(self) -> None:
         cases = (
             ("sobel_edges", {"kernel_size": 5, "direction": "Horizontal changes (dx)"}),
+            (
+                "fourier_transform",
+                {
+                    "view": "Phase spectrum",
+                    "center_frequency": False,
+                    "log_scale": False,
+                },
+            ),
+            (
+                "dct_transform",
+                {
+                    "view": "Low-frequency reconstruction",
+                    "low_frequency_span": 35,
+                    "log_scale": False,
+                },
+            ),
+            (
+                "haar_wavelet_transform",
+                {"levels": 3, "detail_gain": 1.5, "log_scale": False},
+            ),
+            (
+                "radon_transform",
+                {"angle_step": 11, "resolution": 128, "log_scale": False},
+            ),
             (
                 "clahe",
                 {"clip_limit": 3.5, "grid_size": 6, "output_mode": "Grayscale"},

@@ -1,1 +1,1 @@
-"""Automated checks for the OpenCV Parameter Explorer."""
+"""Automated checks for the Interactive Image Processor."""

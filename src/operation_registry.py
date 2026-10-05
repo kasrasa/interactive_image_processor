@@ -1,4 +1,4 @@
-"""Metadata and UI control definitions for every explorer operation."""
+"""Metadata and UI control definitions for every image-processing operation."""
 
 from __future__ import annotations
 
@@ -36,6 +36,7 @@ class OperationSpec:
 
 CATEGORY_ORDER = (
     "Color spaces",
+    "Transform domains",
     "Smoothing",
     "Edges",
     "Thresholding",
@@ -153,6 +154,188 @@ OPERATION_LIST = (
             ),
         ),
         sweep_parameter="chroma_scale",
+    ),
+    OperationSpec(
+        key="fourier_transform",
+        category="Transform domains",
+        name="Fourier spectrum",
+        summary="Reveal the image's global spatial frequencies as magnitude or phase.",
+        explanation=(
+            "The 2D discrete Fourier transform represents the image as horizontal and "
+            "vertical sinusoidal frequencies. Magnitude shows how strongly each frequency "
+            "is present; phase carries spatial alignment. Centering moves zero frequency "
+            "from the corner to the middle, and logarithmic scaling reveals weaker values."
+        ),
+        best_for=(
+            "Finding periodic texture, directional patterns, blur, and frequency-domain "
+            "filtering intuition."
+        ),
+        watch_for=(
+            "The displayed magnitude is normalized for visibility; its brightness is not "
+            "an absolute coefficient measurement."
+        ),
+        controls=(
+            ControlSpec(
+                "view",
+                "Spectrum view",
+                "select",
+                "Magnitude spectrum",
+                "Show coefficient strength or phase angle.",
+                options=("Magnitude spectrum", "Phase spectrum"),
+            ),
+            ControlSpec(
+                "center_frequency",
+                "Center zero frequency",
+                "checkbox",
+                True,
+                "Move the lowest frequency from the top-left corner to the image center.",
+            ),
+            ControlSpec(
+                "log_scale",
+                "Log magnitude",
+                "checkbox",
+                True,
+                "Compress the magnitude range so weaker frequencies become visible.",
+            ),
+        ),
+    ),
+    OperationSpec(
+        key="dct_transform",
+        category="Transform domains",
+        name="DCT coefficients",
+        summary="Inspect cosine coefficients or reconstruct from a low-frequency block.",
+        explanation=(
+            "The 2D discrete cosine transform represents the image with real cosine "
+            "coefficients. Low frequencies collect near the top-left corner. Retaining a "
+            "smaller block demonstrates why DCT-based compression can discard many high-"
+            "frequency coefficients while preserving broad image structure."
+        ),
+        best_for="Compression intuition, frequency truncation, denoising, and feature analysis.",
+        watch_for=(
+            "The span applies independently to rows and columns, so a 50% span retains "
+            "about 25% of the coefficient positions."
+        ),
+        controls=(
+            ControlSpec(
+                "view",
+                "DCT view",
+                "select",
+                "Coefficient spectrum",
+                "Display the retained coefficients or their inverse-DCT reconstruction.",
+                options=("Coefficient spectrum", "Low-frequency reconstruction"),
+            ),
+            ControlSpec(
+                "low_frequency_span",
+                "Low-frequency span",
+                "slider",
+                100,
+                "Percentage of coefficient rows and columns retained from the top-left.",
+                5,
+                100,
+                5,
+                format="%d%%",
+            ),
+            ControlSpec(
+                "log_scale",
+                "Log coefficient magnitude",
+                "checkbox",
+                True,
+                "Compress coefficient magnitudes so weaker frequencies are visible.",
+            ),
+        ),
+        sweep_parameter="low_frequency_span",
+    ),
+    OperationSpec(
+        key="haar_wavelet_transform",
+        category="Transform domains",
+        name="Haar wavelet coefficients",
+        summary="Separate coarse structure from localized detail at several scales.",
+        explanation=(
+            "A 2D Haar transform repeatedly splits the image into one low-frequency "
+            "approximation and three detail bands. Unlike Fourier and DCT bases, the Haar "
+            "basis is localized in space. Additional levels decompose the top-left "
+            "approximation again to expose progressively coarser scales."
+        ),
+        best_for="Multi-scale analysis, localized edges, compression, and denoising intuition.",
+        watch_for=(
+            "Each band is a coefficient visualization rather than a normal image. Detail "
+            "gain changes visibility only; it does not alter the transform itself."
+        ),
+        controls=(
+            ControlSpec(
+                "levels",
+                "Decomposition levels",
+                "select",
+                2,
+                "How many times the low-frequency approximation is decomposed.",
+                options=(1, 2, 3),
+            ),
+            ControlSpec(
+                "detail_gain",
+                "Detail visibility",
+                "slider",
+                3.0,
+                "Display gain applied to detail bands so weaker coefficients are easier to see.",
+                1.0,
+                8.0,
+                0.5,
+                format="%.1f×",
+            ),
+            ControlSpec(
+                "log_scale",
+                "Log coefficient magnitude",
+                "checkbox",
+                True,
+                "Compress the coefficient range before mapping it to the display.",
+            ),
+        ),
+        sweep_parameter="detail_gain",
+    ),
+    OperationSpec(
+        key="radon_transform",
+        category="Transform domains",
+        name="Radon sinogram",
+        summary="Project the image along many angles to create a sinogram.",
+        explanation=(
+            "The Radon transform rotates the image through angles from 0° to 180° and sums "
+            "pixels along parallel lines. Each output column is one angular projection. "
+            "Curves and bright traces in the sinogram describe how image structures align "
+            "with those projection directions."
+        ),
+        best_for="Computed-tomography intuition, line detection, and projection-based features.",
+        watch_for=(
+            "Smaller angle steps and larger working grids preserve more detail but require "
+            "more computation. The image is resized internally for responsive interaction."
+        ),
+        controls=(
+            ControlSpec(
+                "angle_step",
+                "Angle step",
+                "slider",
+                3,
+                "Spacing in degrees between projections from 0° up to 180°.",
+                1,
+                15,
+                1,
+                format="%d°",
+            ),
+            ControlSpec(
+                "resolution",
+                "Working grid",
+                "select",
+                256,
+                "Square resolution used internally before projections are calculated.",
+                options=(128, 256, 384),
+            ),
+            ControlSpec(
+                "log_scale",
+                "Log projection strength",
+                "checkbox",
+                False,
+                "Compress the projection range so weaker sinogram traces are visible.",
+            ),
+        ),
+        sweep_parameter="angle_step",
     ),
     OperationSpec(
         key="box_blur",
@@ -776,7 +959,7 @@ def code_snippet(
     )
     if grayscale_input:
         header += (
-            "# Match the explorer's Grayscale input mode while keeping RGB shape\n"
+            "# Match the app's Grayscale input mode while keeping RGB shape\n"
             "gray_input = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2GRAY)\n"
             "image_rgb = cv2.cvtColor(gray_input, cv2.COLOR_GRAY2RGB)\n"
         )
@@ -809,6 +992,158 @@ result = cv2.cvtColor(lab.astype(np.uint8), cv2.COLOR_LAB2RGB)
             "result = cv2.bilateralFilter(\n"
             f"    image_rgb, {p['diameter']}, {p['sigma_color']}, {p['sigma_space']}\n)"
         )
+    elif key == "fourier_transform":
+        shift_code = (
+            "spectrum = np.fft.fftshift(spectrum, axes=(0, 1))"
+            if p["center_frequency"]
+            else "# Zero frequency remains in the top-left corner"
+        )
+        if p["view"] == "Phase spectrum":
+            display_code = """
+phase = cv2.phase(spectrum[:, :, 0], spectrum[:, :, 1])
+result = np.clip(phase * (255.0 / (2.0 * np.pi)), 0, 255).astype(np.uint8)
+""".strip()
+        else:
+            log_code = (
+                "display_values = np.log1p(display_values)"
+                if p["log_scale"]
+                else "# Linear magnitude display"
+            )
+            display_code = f"""
+magnitude = cv2.magnitude(spectrum[:, :, 0], spectrum[:, :, 1])
+display_values = np.abs(magnitude).astype(np.float32)
+{log_code}
+result = cv2.normalize(
+    display_values, None, 0, 255, cv2.NORM_MINMAX
+).astype(np.uint8)
+""".strip()
+        body = f"""
+gray = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2GRAY).astype(np.float32)
+spectrum = cv2.dft(gray, flags=cv2.DFT_COMPLEX_OUTPUT)
+{shift_code}
+{display_code}
+"""
+    elif key == "dct_transform":
+        if p["view"] == "Low-frequency reconstruction":
+            display_code = """
+reconstruction = cv2.idct(retained)[:height, :width]
+result = np.clip(np.rint(reconstruction), 0, 255).astype(np.uint8)
+""".strip()
+        else:
+            log_code = (
+                "display_values = np.log1p(display_values)"
+                if p["log_scale"]
+                else "# Linear coefficient display"
+            )
+            display_code = f"""
+display_values = np.abs(retained).astype(np.float32)
+{log_code}
+result = cv2.normalize(
+    display_values, None, 0, 255, cv2.NORM_MINMAX
+).astype(np.uint8)
+""".strip()
+        body = f"""
+gray = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2GRAY).astype(np.float32)
+height, width = gray.shape
+bottom_padding, right_padding = height % 2, width % 2
+border_mode = (
+    cv2.BORDER_REFLECT_101 if height > 1 and width > 1 else cv2.BORDER_REPLICATE
+)
+padded = cv2.copyMakeBorder(
+    gray, 0, bottom_padding, 0, right_padding, border_mode
+)
+coefficients = cv2.dct(padded)
+fraction = {p["low_frequency_span"]} / 100.0
+kept_height = max(1, int(np.ceil(coefficients.shape[0] * fraction)))
+kept_width = max(1, int(np.ceil(coefficients.shape[1] * fraction)))
+retained = np.zeros_like(coefficients)
+retained[:kept_height, :kept_width] = coefficients[:kept_height, :kept_width]
+{display_code}
+"""
+    elif key == "haar_wavelet_transform":
+        log_code = (
+            "display_values = np.log1p(display_values)"
+            if p["log_scale"]
+            else "# Linear coefficient display"
+        )
+        body = f"""
+gray = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2GRAY).astype(np.float32)
+height, width = gray.shape
+factor = 2 ** {p["levels"]}
+bottom_padding, right_padding = (-height) % factor, (-width) % factor
+border_mode = (
+    cv2.BORDER_REFLECT_101 if height > 1 and width > 1 else cv2.BORDER_REPLICATE
+)
+coefficients = cv2.copyMakeBorder(
+    gray, 0, bottom_padding, 0, right_padding, border_mode
+)
+current_height, current_width = coefficients.shape
+root_two = np.sqrt(2.0)
+for _ in range({p["levels"]}):
+    region = coefficients[:current_height, :current_width].copy()
+    low_columns = (region[:, 0::2] + region[:, 1::2]) / root_two
+    high_columns = (region[:, 0::2] - region[:, 1::2]) / root_two
+    low_low = (low_columns[0::2] + low_columns[1::2]) / root_two
+    high_low = (low_columns[0::2] - low_columns[1::2]) / root_two
+    low_high = (high_columns[0::2] + high_columns[1::2]) / root_two
+    high_high = (high_columns[0::2] - high_columns[1::2]) / root_two
+    half_height, half_width = current_height // 2, current_width // 2
+    coefficients[:half_height, :half_width] = low_low
+    coefficients[:half_height, half_width:current_width] = low_high
+    coefficients[half_height:current_height, :half_width] = high_low
+    coefficients[half_height:current_height, half_width:current_width] = high_high
+    current_height, current_width = half_height, half_width
+display_values = np.abs(coefficients)
+detail_mask = np.ones_like(display_values, dtype=bool)
+detail_mask[:current_height, :current_width] = False
+display_values[detail_mask] *= {p["detail_gain"]}
+{log_code}
+result = cv2.normalize(
+    display_values, None, 0, 255, cv2.NORM_MINMAX
+).astype(np.uint8)
+"""
+    elif key == "radon_transform":
+        log_code = (
+            "display_values = np.log1p(display_values)"
+            if p["log_scale"]
+            else "# Linear projection display"
+        )
+        body = f"""
+gray = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2GRAY).astype(np.float32)
+height, width = gray.shape
+resolution = {p["resolution"]}
+scale = resolution / max(height, width)
+resized_width = max(1, min(resolution, round(width * scale)))
+resized_height = max(1, min(resolution, round(height * scale)))
+interpolation = cv2.INTER_AREA if scale < 1.0 else cv2.INTER_LINEAR
+resized = cv2.resize(
+    gray, (resized_width, resized_height), interpolation=interpolation
+)
+square = np.zeros((resolution, resolution), dtype=np.float32)
+x0 = (resolution - resized_width) // 2
+y0 = (resolution - resized_height) // 2
+square[y0:y0 + resized_height, x0:x0 + resized_width] = resized
+angles = np.arange(0, 180, {p["angle_step"]}, dtype=np.float32)
+center = ((resolution - 1) / 2.0, (resolution - 1) / 2.0)
+projections = []
+for angle in angles:
+    matrix = cv2.getRotationMatrix2D(center, float(angle), 1.0)
+    rotated = cv2.warpAffine(
+        square,
+        matrix,
+        (resolution, resolution),
+        flags=cv2.INTER_LINEAR,
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=0,
+    )
+    projections.append(rotated.sum(axis=0))
+sinogram = np.stack(projections, axis=1)
+display_values = np.abs(sinogram).astype(np.float32)
+{log_code}
+result = cv2.normalize(
+    display_values, None, 0, 255, cv2.NORM_MINMAX
+).astype(np.uint8)
+"""
     elif key == "sobel_edges":
         if p["direction"] == "Horizontal changes (dx)":
             gradient_code = "edges = np.abs(dx)"

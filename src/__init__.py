@@ -1,1 +1,1 @@
-"""Reusable image-processing helpers for the OpenCV Parameter Explorer."""
+"""Reusable image-processing helpers for the Interactive Image Processor."""

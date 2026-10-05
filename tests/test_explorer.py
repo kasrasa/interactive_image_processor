@@ -1,4 +1,4 @@
-"""Unit tests for the explorer's presentation-independent helpers."""
+"""Unit tests for the app's presentation-independent helpers."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from src.explorer import (
 from src.operation_registry import OPERATION_LIST, default_parameters
 
 
-class ExplorerHelperTests(unittest.TestCase):
+class ImageProcessingHelperTests(unittest.TestCase):
     def test_image_as_png_round_trips_without_changing_pixels(self) -> None:
         image = np.array(
             [[[0, 64, 255], [128, 32, 16]], [[255, 255, 255], [0, 0, 0]]],

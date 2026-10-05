@@ -15,11 +15,11 @@ from src.image_utils import image_dimensions, is_grayscale_image, mean_luminance
 from src.operation_registry import code_snippet
 from src.operations import OperationResult, apply_operation
 from src.ui.components import render_technique_heading
-from src.ui.sidebar import ExplorerSelection
+from src.ui.sidebar import ProcessingSelection
 
 
 def _render_image_comparison(
-    selection: ExplorerSelection,
+    selection: ProcessingSelection,
     result: OperationResult,
 ) -> None:
     original_column, result_column = st.columns(2, gap="large")
@@ -44,7 +44,7 @@ def _render_image_comparison(
 
 
 def _render_metrics(
-    selection: ExplorerSelection,
+    selection: ProcessingSelection,
     result: OperationResult,
 ) -> None:
     metric_items = [
@@ -58,7 +58,7 @@ def _render_metrics(
         column.metric(label, value)
 
 
-def _render_learning_tab(selection: ExplorerSelection) -> None:
+def _render_learning_tab(selection: ProcessingSelection) -> None:
     operation = selection.operation
     st.markdown(f"### How {operation.name.lower()} works")
     st.write(operation.explanation)
@@ -80,7 +80,7 @@ def _render_learning_tab(selection: ExplorerSelection) -> None:
     st.dataframe(parameter_rows, hide_index=True, width="stretch")
 
 
-def _render_code_tab(selection: ExplorerSelection) -> None:
+def _render_code_tab(selection: ProcessingSelection) -> None:
     st.markdown("### Reproduce this result")
     st.caption(
         "The snippet assumes `image_rgb` has already been loaded as an RGB uint8 "
@@ -106,7 +106,7 @@ def _render_code_tab(selection: ExplorerSelection) -> None:
     )
 
 
-def _render_comparison_tab(selection: ExplorerSelection) -> None:
+def _render_comparison_tab(selection: ProcessingSelection) -> None:
     comparison = sweep_variants(selection.operation, selection.parameters)
     if comparison is None:
         st.info(
@@ -134,7 +134,7 @@ def _render_comparison_tab(selection: ExplorerSelection) -> None:
 
 
 def _render_histogram_tab(
-    selection: ExplorerSelection,
+    selection: ProcessingSelection,
     result: OperationResult,
     dark_mode: bool,
 ) -> None:
@@ -155,7 +155,7 @@ def _render_histogram_tab(
 
 
 def render_results(
-    selection: ExplorerSelection,
+    selection: ProcessingSelection,
     result: OperationResult,
     dark_mode: bool,
 ) -> None:

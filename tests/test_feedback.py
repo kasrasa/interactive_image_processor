@@ -65,8 +65,9 @@ class FeedbackDeliveryTests(unittest.TestCase):
         fields = parse_qs(request.data.decode("utf-8"))
         self.assertEqual(
             request.headers["User-agent"],
-            "Kasra-Sadatsharifi-OpenCV-Explorer/1.0",
+            "Kasra-Sadatsharifi-Interactive-Image-Processor/1.0",
         )
+        self.assertEqual(fields["source"], ["Interactive Image Processor"])
         self.assertEqual(fields["feedback_type"], ["Very useful"])
         self.assertEqual(fields["current_technique"], ["Thresholding / Otsu threshold"])
         self.assertEqual(fields["rating"], ["5 / 5"])
@@ -99,7 +100,7 @@ class FeedbackDeliveryTests(unittest.TestCase):
                 "https://formspree.io/f/example-id",
                 FeedbackSubmission(
                     category="General feedback",
-                    message="Useful explorer.",
+                    message="Useful tool.",
                     technique="Color spaces / HSV controls",
                 ),
             )

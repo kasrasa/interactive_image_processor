@@ -1,4 +1,4 @@
-"""Pure data helpers used by the interactive explorer views."""
+"""Pure data helpers used by the interactive image-processing views."""
 
 from __future__ import annotations
 

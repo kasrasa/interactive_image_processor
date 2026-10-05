@@ -1,4 +1,4 @@
-"""Private feedback delivery for the OpenCV explorer."""
+"""Private feedback delivery for the Interactive Image Processor."""
 
 from __future__ import annotations
 
@@ -30,11 +30,11 @@ class FeedbackSubmission:
         """Return the fields expected by the hosted feedback form."""
 
         fields = {
-            "_subject": f"OpenCV Parameter Explorer: {self.category}",
+            "_subject": f"Interactive Image Processor: {self.category}",
             "feedback_type": self.category,
             "message": self.message,
             "current_technique": self.technique,
-            "source": "OpenCV Parameter Explorer",
+            "source": "Interactive Image Processor",
         }
         if self.rating is not None:
             fields["rating"] = f"{self.rating + 1} / 5"
@@ -84,7 +84,7 @@ def submit_feedback(
         headers={
             "Accept": "application/json",
             "Content-Type": "application/x-www-form-urlencoded",
-            "User-Agent": "Kasra-Sadatsharifi-OpenCV-Explorer/1.0",
+            "User-Agent": "Kasra-Sadatsharifi-Interactive-Image-Processor/1.0",
         },
         method="POST",
     )
