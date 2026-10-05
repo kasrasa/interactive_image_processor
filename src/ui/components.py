@@ -1,4 +1,4 @@
-"""Reusable static presentation components for the explorer page."""
+"""Reusable static presentation components for the application page."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ def render_hero() -> None:
         """
         <div class="lab-hero">
             <div class="lab-eyebrow">Kasra Sadatsharifi · Interactive computer vision project</div>
-            <h1>OpenCV Parameter Explorer</h1>
+            <h1>Interactive Image Processor</h1>
             <p>
                 See what each parameter changes, compare settings side by side, and copy the
                 exact Python behind the result. Start with the built-in test card or upload your own image.

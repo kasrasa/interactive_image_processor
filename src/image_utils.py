@@ -52,7 +52,7 @@ def create_sample_image(width: int = 960, height: int = 640) -> np.ndarray:
     )
     cv2.putText(
         image,
-        "PARAMETER LAB",
+        "IMAGE PROCESSOR",
         (414, 505),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.92,

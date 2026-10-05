@@ -55,9 +55,43 @@ button[role="tab"] {
     color: var(--lab-ink) !important;
     fill: var(--lab-ink) !important;
 }
+[data-baseweb="textarea"] textarea::placeholder {
+    color: var(--lab-muted) !important;
+    opacity: 1;
+}
 [data-testid="stForm"] {
     background: var(--lab-surface-soft);
     border-color: var(--lab-line);
+}
+[data-testid="stFeedback"] button {
+    background: transparent !important;
+    color: var(--lab-muted) !important;
+}
+[data-testid="stFeedback"] button:hover,
+[data-testid="stFeedback"] button[data-testid="stFeedbackButtonActive"] {
+    color: var(--lab-accent) !important;
+}
+[data-testid="stFeedback"] button span,
+[data-testid="stFeedback"] button svg {
+    color: inherit !important;
+    fill: currentColor !important;
+}
+[data-testid="stButtonGroup"] button[data-variant="pills"] {
+    background: var(--lab-control-bg) !important;
+    border-color: var(--lab-line) !important;
+    color: var(--lab-ink) !important;
+}
+[data-testid="stButtonGroup"] button[data-variant="pills"] p,
+[data-testid="stButtonGroup"] button[data-variant="pills"] span {
+    color: inherit !important;
+}
+[data-testid="stButtonGroup"] button[data-variant="pills"]:hover {
+    border-color: var(--lab-accent) !important;
+}
+[data-testid="stButtonGroup"] button[data-variant="pills"][data-selected] {
+    background: var(--lab-accent-soft) !important;
+    border-color: var(--lab-accent) !important;
+    color: var(--lab-ink) !important;
 }
 [data-testid="stDownloadButton"] button,
 [data-testid="stBaseButton-secondary"] {

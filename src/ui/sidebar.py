@@ -24,8 +24,8 @@ from src.operation_registry import (
 
 
 @dataclass(frozen=True)
-class ExplorerSelection:
-    """All user selections needed to render one explorer result."""
+class ProcessingSelection:
+    """All user selections needed to render one processing result."""
 
     source_image: np.ndarray
     input_name: str
@@ -95,7 +95,7 @@ def _render_image_source() -> tuple[np.ndarray, str]:
         key="image_source",
     )
 
-    input_name = "opencv-sample"
+    input_name = "image-processor-sample"
     was_resized = False
     if image_source == "Upload an image":
         uploaded_file = st.sidebar.file_uploader(
@@ -127,7 +127,7 @@ def _render_image_source() -> tuple[np.ndarray, str]:
     return source_image, input_name
 
 
-def render_sidebar() -> ExplorerSelection:
+def render_sidebar() -> ProcessingSelection:
     """Render all experiment controls and return their current values."""
 
     source_image, input_name = _render_image_source()
@@ -165,7 +165,7 @@ def render_sidebar() -> ExplorerSelection:
         control.key: render_control(control, operation.key)
         for control in operation.controls
     }
-    return ExplorerSelection(
+    return ProcessingSelection(
         source_image=source_image,
         input_name=input_name,
         grayscale_mode=grayscale_mode,

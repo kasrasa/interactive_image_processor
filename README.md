@@ -1,8 +1,8 @@
-# OpenCV Parameter Explorer
+# Interactive Image Processor
 
 An interactive computer-vision learning project by Kasra Sadatsharifi.
 
-A hosted demo link will be added after the deployment URL is finalized.
+[Try the live application](https://interactiveimageprocessing.streamlit.app/).
 
 An interactive learning tool for classical computer vision. Upload an image, adjust an
 OpenCV parameter, and see the effect immediately beside the original. Every technique
@@ -11,9 +11,9 @@ copy-ready Python example matching the selected settings. A Grayscale toggle let
 image luminance as the working original for every technique and restore the untouched color
 image at any time.
 
-The app turns a collection of image-processing experiments into a structured,
-browser-based playground. It reflects a research mindset, production habits, and clear
-technical communication.
+The Interactive Image Processor turns a collection of image-processing experiments into a
+structured, browser-based playground. It reflects a research mindset, production habits,
+and clear technical communication.
 
 Visitors can send anonymous feedback from inside the app with a quick face rating and
 selectable reasons. A written note is optional, and no visitor account, sign-in, or email is
@@ -25,6 +25,7 @@ displayed publicly.
 | Family | Techniques |
 | --- | --- |
 | Color spaces | HSV controls, LAB controls |
+| Transform domains | Fourier magnitude/phase, DCT coefficients/reconstruction, multi-level Haar wavelets, Radon sinograms |
 | Smoothing | Box blur, Gaussian blur, bilateral filtering |
 | Edges | Sobel gradients, Canny edges |
 | Thresholding | Manual binary threshold, Otsu threshold |
@@ -63,7 +64,8 @@ Streamlit will print a local address, normally
 
 Uploaded images are processed in the running Streamlit session. Files are not stored by
 the app. Inputs larger than 1,400 pixels on their longest side are reduced for a responsive
-preview.
+preview. Transform-domain outputs are normalized into an 8-bit image for display; the
+copy-ready code shows the corresponding coefficient or projection calculation.
 
 ## Verify the processing layer
 

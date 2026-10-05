@@ -1,1 +1,1 @@
-"""Streamlit presentation components for the OpenCV explorer."""
+"""Streamlit presentation components for the Interactive Image Processor."""

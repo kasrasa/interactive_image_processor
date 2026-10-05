@@ -14,7 +14,7 @@ from src.ui.theme import configure_page, render_theme_selector
 
 
 def main() -> None:
-    """Compose the explorer from focused sidebar, result, and feedback views."""
+    """Compose the app from focused sidebar, result, and feedback views."""
 
     configure_page()
     dark_mode = render_theme_selector()

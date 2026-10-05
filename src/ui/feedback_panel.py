@@ -47,7 +47,7 @@ def render_feedback_panel(technique: str) -> None:
     """Render the anonymous feedback form and handle one submission."""
 
     with st.container(border=True):
-        st.markdown("### How useful was this explorer?")
+        st.markdown("### How useful was this tool?")
         st.caption(
             "Let me know what stood out, what could be improved, or what features "
             "you'd like to see next. No account, sign-in, or email is required."

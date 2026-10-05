@@ -1,4 +1,4 @@
-"""Streamlit-level smoke tests for the explorer interface."""
+"""Streamlit-level smoke tests for the application interface."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from streamlit.testing.v1 import AppTest
 class AppSmokeTests(unittest.TestCase):
     app_path = Path(__file__).resolve().parents[1] / "app.py"
 
-    def test_default_explorer_renders_without_exceptions(self) -> None:
+    def test_default_app_renders_without_exceptions(self) -> None:
         app = AppTest.from_file(self.app_path, default_timeout=30).run()
 
         self.assertEqual(len(app.exception), 0)
@@ -29,6 +29,7 @@ class AppSmokeTests(unittest.TestCase):
         rendered_markdown = "\n".join(block.value for block in app.markdown)
         normalized_markdown = " ".join(rendered_markdown.split())
         self.assertIn("Created by", rendered_markdown)
+        self.assertIn("Interactive Image Processor", rendered_markdown)
         self.assertIn("Kasra Sadatsharifi", rendered_markdown)
         self.assertIn("Research mindset. Production habits.", rendered_markdown)
         self.assertIn(
@@ -112,6 +113,9 @@ class AppSmokeTests(unittest.TestCase):
         rendered_markdown = "\n".join(block.value for block in app.markdown)
         self.assertIn("--lab-bg: #0b1120", rendered_markdown)
         self.assertIn("--lab-color-scheme: dark", rendered_markdown)
+        self.assertIn('[data-testid="stFeedback"] button', rendered_markdown)
+        self.assertIn('button[data-variant="pills"]', rendered_markdown)
+        self.assertIn("color: var(--lab-ink) !important", rendered_markdown)
 
     def test_switching_to_canny_updates_controls_and_code(self) -> None:
         app = AppTest.from_file(self.app_path, default_timeout=30).run()
@@ -124,6 +128,19 @@ class AppSmokeTests(unittest.TestCase):
             [("Low / high thresholds", (60, 150)), ("Pre-blur kernel", 5)],
         )
         self.assertTrue(any("cv2.Canny" in block.value for block in app.code))
+
+    def test_transform_domain_family_renders_fourier_controls_and_code(self) -> None:
+        app = AppTest.from_file(self.app_path, default_timeout=30).run()
+        app.selectbox[0].select("Transform domains").run()
+
+        self.assertEqual(len(app.exception), 0)
+        self.assertEqual(app.selectbox[1].value, "Fourier spectrum")
+        self.assertEqual(app.selectbox[2].value, "Magnitude spectrum")
+        self.assertEqual(
+            [(checkbox.label, checkbox.value) for checkbox in app.checkbox],
+            [("Center zero frequency", True), ("Log magnitude", True)],
+        )
+        self.assertTrue(any("cv2.dft" in block.value for block in app.code))
 
     def test_grayscale_toggle_updates_the_working_input_and_code(self) -> None:
         app = AppTest.from_file(self.app_path, default_timeout=30).run()
